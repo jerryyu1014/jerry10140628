@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>時間管理工具</title>
+ 
+</head>
+<body>
+  <!-- Header -->
+  <header>
+      <h1>掌握每分每秒</h1>
+      <p>高效規劃你的時間，提升生產力</p>
+      <div class="current-datetime" id="currentDatetime"></div> <!-- 當前日期時間 -->
+      <button onclick="showDashboard()">開始使用</button>
+  </header>
+
+  <!-- Dashboard -->
+  <main id="dashboard" style="display: none;">
+      <section class="task-list">
+          <h2>任務清單</h2>
+          <ul id="tasks">
+              <!-- Tasks will be added dynamically -->
+          </ul>
+          <input type="text" id="newTaskInput" placeholder="新增任務">
+          <select id="prioritySelect">
+              <option value="低">低</option>
+              <option value="中">中</option>
+              <option value="高">高</option>
+          </select>
+          <select id="categorySelect">
+              <option value="工作">工作</option>
+              <option value="學習">學習</option>
+              <option value="個人">個人</option>
+          </select>
+          <input type="date" id="dueDateInput">
+          <input type="time" id="taskEndTimeInput">
+          <select id="repeatSelect">
+              <option value="無">無</option>
+              <option value="每日">每日</option>
+              <option value="每週">每週</option>
+              <option value="每月">每月</option>
+          </select>
+          <button onclick="addTask()">新增</button>
+      </section>
+
+      <section class="calendar">
+          <h2>行事曆</h2>
+          <div class="calendar-container" id="calendar"></div>
+      </section>
+
+      <section class="analytics">
+          <h2>時間分析</h2>
+          <div id="analyticsResult">
+              <p>總任務數量: <span id="totalTasks">0</span></p>
+              <p>高優先級任務數量: <span id="highPriorityTasks">0</span></p>
+              <p>中優先級任務數量: <span id="mediumPriorityTasks">0</span></p>
+              <p>低優先級任務數量: <span id="lowPriorityTasks">0</span></p>
+          </div>
+      </section>
+
+      <section class="log">
+          <h2>日誌功能</h2>
+          <textarea id="dailyLog" placeholder="記錄你的反思和收穫..." rows="5"></textarea>
+          <button onclick="saveLog()">保存日誌</button>
+          <p id="logMessage"></p>
+      </section>
+  </main>
+
+  <style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f5f5f5;
+        color: #333;
+    }
+    header {
+        text-align: center;
+        padding: 2rem;
+        background-color: #8B4513; /* 巧克力色 */
+        color: white;
+        border-bottom: 4px solid #6F4C3E; /* 深巧克力色 */
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+    header h1 {
+        font-size: 2.5rem;
+    }
+    header button {
+        margin-top: 1rem;
+        padding: 0.5rem 1rem;
+        font-size: 1rem;
+        color: #8B4513; /* 巧克力色 */
+        background-color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+    header button:hover {
+        background-color: #ddd;
+    }
+    .current-datetime {
+        margin: 1rem 0;
+        font-size: 1.2rem;
+    }
+    main {
+        padding: 2rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .task-list, .calendar, .analytics, .log {
+        background-color: #ffffff;
+        padding: 1.5rem;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border-left: 5px solid #8B4513; /* 巧克力色 */
+        width: 100%;
+        max-width: 800px;
+        margin: 1rem 0; /* 增加上下邊距 */
+        box-sizing: border-box; /* 包含邊框和內邊距 */
+    }
+    .task-list h2, .calendar h2, .analytics h2, .log h2 {
+        margin-bottom: 1rem;
+        color: #8B4513; /* 巧克力色 */
+    }
+    .task-list input, .task-list select {
+        width: calc(100% - 5rem);
+        padding: 0.5rem;
+        margin-bottom: 0.5rem;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        box-sizing: border-box; /* 包含邊框和內邊距 */
+    }
+    .task-list button {
+        padding: 0.5rem 1rem;
+        background-color: #8B4513; /* 巧克力色 */
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+    .task-list button:hover {
+        background-color: #7B3F00; /* 深色巧克力色 */
+    }
+    .completed {
+        text-decoration: line-through;
+        color: gray;
+    }
+    .task-list li {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem;
+        margin: 0.5rem 0;
+        border-bottom: 1px solid #ddd;
+    }
+    .task-list li button {
+        margin-left: 0.5rem;
+    }
+    .analytics p, .log p {
+        margin: 0.5rem 0;
+    }
+    .calendar-container {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 10px;
+        margin-top: 20px;
+    }
+    .calendar-day {
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        padding: 10px;
+        position: relative;
+        height: 100px;
+        cursor: pointer;
+        box-sizing: border-box; /* 包含邊框和內邊距 */
+    }
+    .calendar-day:hover {
+        background-color: #f0f0f0;
+    }
+    .task-list-for-day {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        position: absolute;
+        bottom: 5px;
+        left: 5px;
+        right: 5px;
+        overflow-y: auto;
+        max-height: 60px;
+    }
+</style>
+
+  <script>
+      const tasks = {};
+      const currentDate = new Date();
+
+      function updateCurrentDatetime() {
+          const now = new Date();
+          const options = { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+          const formattedDate = now.toLocaleString('zh-TW', options);
+          document.getElementById("currentDatetime").textContent = formattedDate;
+      }
+
+      function showDashboard() {
+          document.querySelector("header").style.display = "none";
+          document.getElementById("dashboard").style.display = "block";
+          renderCalendar();
+          updateAnalytics();
+      }
+
+      function addTask() {
+          const taskInput = document.getElementById("newTaskInput");
+          const taskText = taskInput.value.trim();
+          const prioritySelect = document.getElementById("prioritySelect");
+          const categorySelect = document.getElementById("categorySelect");
+          const dueDateInput = document.getElementById("dueDateInput");
+          const taskEndTimeInput = document.getElementById("taskEndTimeInput");
+          const repeatSelect = document.getElementById("repeatSelect");
+          const dueDate = dueDateInput.value;
+          const endTime = taskEndTimeInput.value;
+
+          if (taskText !== "" && dueDate) {
+              if (!tasks[dueDate]) {
+                  tasks[dueDate] = [];
+              }
+              tasks[dueDate].push({ text: taskText, priority: prioritySelect.value, category: categorySelect.value, endTime: endTime, repeat: repeatSelect.value });
+
+              // 如選擇重複任務，添加多個任務
+              if (repeatSelect.value !== "無") {
+                  let repeatCount = 1;
+                  let nextDate = new Date(dueDate);
+                  while (repeatCount < 5) { // 限制最多添加5次
+                      if (repeatSelect.value === "每日") {
+                          nextDate.setDate(nextDate.getDate() + 1);
+                      } else if (repeatSelect.value === "每週") {
+                          nextDate.setDate(nextDate.getDate() + 7);
+                      } else if (repeatSelect.value === "每月") {
+                          nextDate.setMonth(nextDate.getMonth() + 1);
+                      }
+                      const nextDateString = nextDate.toISOString().split('T')[0];
+                      if (!tasks[nextDateString]) {
+                          tasks[nextDateString] = [];
+                      }
+                      tasks[nextDateString].push({ text: taskText, priority: prioritySelect.value, category: categorySelect.value, endTime: endTime });
+                      repeatCount++;
+                  }
+              }
+
+              renderTasks();
+              taskInput.value = ""; // Clear input
+              dueDateInput.value = ""; // Clear date input
+              taskEndTimeInput.value = ""; // Clear time input
+              repeatSelect.value = "無"; // Reset repeat option
+
+              // 設置提醒
+              setReminder(dueDate, endTime, taskText);
+              renderCalendar();
+              updateAnalytics();
+          }
+      }
+
+      function renderTasks() {
+          const tasksList = document.getElementById("tasks");
+          tasksList.innerHTML = ""; // Clear previous tasks
+
+          const sortedTasks = Object.entries(tasks).flatMap(([date, taskList]) => taskList.map(task => ({ date, ...task })))
+              .sort((a, b) => a.priority.localeCompare(b.priority));
+
+          sortedTasks.forEach(({ date, text, priority, category, endTime }) => {
+              const newTask = document.createElement("li");
+              newTask.textContent = `${text} (優先級: ${priority}, 類別: ${category}, 截止時間: ${endTime})`;
+              newTask.classList.add(priority);
+
+              // Add complete button
+              const completeBtn = document.createElement("button");
+              completeBtn.textContent = "完成";
+              completeBtn.onclick = () => {
+                  newTask.classList.toggle("completed");
+              };
+              newTask.appendChild(completeBtn);
+
+              // Add delete button
+              const deleteBtn = document.createElement("button");
+              deleteBtn.textContent = "刪除";
+              deleteBtn.onclick = () => {
+                  tasks[date] = tasks[date].filter(t => t.text !== text);
+                  if (tasks[date].length === 0) {
+                      delete tasks[date];
+                  }
+                  renderTasks();
+                  renderCalendar();
+                  updateAnalytics();
+              };
+              newTask.appendChild(deleteBtn);
+
+              tasksList.appendChild(newTask);
+          });
+      }
+
+      function renderCalendar() {
+          const calendarContainer = document.getElementById("calendar");
+          calendarContainer.innerHTML = ""; // Clear previous calendar
+
+          const year = currentDate.getFullYear();
+          const month = currentDate.getMonth();
+
+          // 獲取該月的第一天和最後一天
+          const firstDay = new Date(year, month, 1);
+          const lastDay = new Date(year, month + 1, 0);
+          const daysInMonth = lastDay.getDate();
+
+          // 顯示日曆
+          for (let i = 1; i <= daysInMonth; i++) {
+              const dayDate = new Date(year, month, i);
+              const dayString = dayDate.toISOString().split('T')[0]; // YYYY-MM-DD
+
+              const dayElement = document.createElement("div");
+              dayElement.classList.add("calendar-day");
+              dayElement.innerHTML = `<strong>${i}</strong>`;
+
+              // 點擊事件，新增行程
+              dayElement.onclick = () => {
+                  const schedule = prompt("請輸入行程內容：", "");
+                  if (schedule) {
+                      if (!tasks[dayString]) {
+                          tasks[dayString] = [];
+                      }
+                      tasks[dayString].push({ text: schedule, priority: "普通", category: "其他", endTime: "" });
+                      renderCalendar();
+                      updateAnalytics();
+                  }
+              };
+
+              // 顯示該天的任務
+              if (tasks[dayString]) {
+                  const taskList = document.createElement("ul");
+                  taskList.classList.add("task-list-for-day");
+                  tasks[dayString].forEach(task => {
+                      const taskItem = document.createElement("li");
+                      taskItem.textContent = task.text;
+                      taskList.appendChild(taskItem);
+                  });
+                  dayElement.appendChild(taskList);
+              }
+
+              calendarContainer.appendChild(dayElement);
+          }
+      }
+
+      function setReminder(date, endTime, taskText) {
+          const endDateTime = new Date(`${date}T${endTime}`);
+          const now = new Date();
+
+          // 計算延遲時間
+          const delay = endDateTime - now;
+
+          if (delay > 0) {
+              setTimeout(() => {
+                  alert(`提醒: 任務 "${taskText}" 已到期！`);
+              }, delay);
+          }
+      }
+
+      function updateAnalytics() {
+          let totalTasks = 0;
+          let highPriorityTasks = 0;
+          let mediumPriorityTasks = 0;
+          let lowPriorityTasks = 0;
+
+          for (const date in tasks) {
+              totalTasks += tasks[date].length;
+              tasks[date].forEach(task => {
+                  if (task.priority === "高") highPriorityTasks++;
+                  if (task.priority === "中") mediumPriorityTasks++;
+                  if (task.priority === "低") lowPriorityTasks++;
+              });
+          }
+
+          document.getElementById("totalTasks").textContent = totalTasks;
+          document.getElementById("highPriorityTasks").textContent = highPriorityTasks;
+          document.getElementById("mediumPriorityTasks").textContent = mediumPriorityTasks;
+          document.getElementById("lowPriorityTasks").textContent = lowPriorityTasks;
+      }
+
+      function saveLog() {
+          const logText = document.getElementById("dailyLog").value;
+          if (logText) {
+              document.getElementById("logMessage").textContent = "日誌已保存！";
+              document.getElementById("dailyLog").value = ""; // Clear log input
+          } else {
+              document.getElementById("logMessage").textContent = "請輸入日誌內容！";
+          }
+      }
+
+      // 每秒更新當前日期和時間
+      setInterval(updateCurrentDatetime, 1000);
+      updateCurrentDatetime(); // 初始化顯示
+  </script>
+</body>
+</html>
+
+               
