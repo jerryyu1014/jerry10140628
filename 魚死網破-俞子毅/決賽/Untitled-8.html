@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>單詞卡片</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            text-align: center; 
+            background-color: #f2f2f2; 
+            padding: 20px; 
+        }
+        .container {
+            background-color: #e0d4c3;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .box {
+            border: 1px solid #c2b280;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            background-color: #d9c6b2;
+        }
+        .card {
+            width: 200px;
+            height: 100px;
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #c2b280;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            background-color: #a68a67;
+            color:white;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        .card:hover {
+            transform: scale(1.05);
+            background-color: #8b6a54;
+        }
+        #wordInput, #definitionInput, #tagInput, #searchInput {
+            width: 200px;
+            margin: 10px;
+            padding: 5px;
+            border: 1px solid #c2b280;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            background-color: #a68a67;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #8b6a54;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>單詞卡片</h1>
+        <div class="box">
+            <div class="card" id="wordCard" onclick="flipCard()">
+                <span id="word">點擊翻轉</span>
+            </div>
+            <button onclick="nextWord()">下一個單詞</button>
+        </div>
+
+        <div class="box">
+            <h2>新增單詞卡片</h2>
+            <input type="text" id="wordInput" placeholder="單詞">
+            <input type="text" id="definitionInput" placeholder="定義">
+            <input type="text" id="tagInput" placeholder="標籤 (可選)">
+            <button onclick="addWord()">新增單詞卡</button>
+        </div>
+
+        <div class="box">
+            <h2>搜尋單詞</h2>
+            <input type="text" id="searchInput" placeholder="搜尋單詞" oninput="searchWord()">
+            <button onclick="resetSearch()">重置搜尋</button>
+        </div>
+
+        <div class="box">
+            <h2>刪除單詞卡片</h2>
+            <button onclick="deleteCurrentWord()">刪除當前單詞卡</button>
+        </div>
+
+        <div class="box">
+            <h2>已學會</h2>
+            <button onclick="markAsLearned()">標記為已學會</button>
+        </div>
+
+        <div class="box">
+            <h2>進度追蹤</h2>
+            <button onclick="showProgress()">顯示進度</button>
+        </div>
+
+        <div class="box">
+            <h2>複習模式</h2>
+            <button onclick="startReview()">開始複習</button>
+        </div>
+    </div>
+
+    <script>
+        let words = JSON.parse(localStorage.getItem('words')) || [];
+        let currentIndex = 0;
+        let reviewMode = false;
+
+        function showWord() {
+            const wordElement = document.getElementById('word');
+            if (words.length > 0) {
+                wordElement.textContent = words[currentIndex].term;
+            } else {
+                wordElement.textContent = "沒有單詞卡片";
+            }
+        }
+
+        function flipCard() {
+            const wordElement = document.getElementById('word');
+            if (words.length > 0) {
+                if (wordElement.textContent === words[currentIndex].term) {
+                    wordElement.textContent = words[currentIndex].definition;
+                } else {
+                    wordElement.textContent = words[currentIndex].term;
+                }
+            }
+        }
+
+        function nextWord() {
+            if (words.length > 0) {
+                currentIndex = (currentIndex + 1) % words.length;
+                showWord();
+            }
+        }
+
+        function addWord() {
+            const wordInput = document.getElementById('wordInput').value;
+            const definitionInput = document.getElementById('definitionInput').value;
+            const tagInput = document.getElementById('tagInput').value;
+            if (wordInput && definitionInput) {
+                words.push({ term: wordInput, definition: definitionInput, tag: tagInput, learned: false });
+                localStorage.setItem('words', JSON.stringify(words));
+                document.getElementById('wordInput').value = '';
+                document.getElementById('definitionInput').value = '';
+                document.getElementById('tagInput').value = '';
+                showWord();
+            }
+        }
+
+        function deleteCurrentWord() {
+            if (words.length > 0) {
+                words.splice(currentIndex, 1);
+                localStorage.setItem('words', JSON.stringify(words));
+                if (currentIndex >= words.length) {
+                    currentIndex = words.length - 1;
+                }
+                showWord();
+            }
+        }
+
+        function searchWord() {
+            const searchInput = document.getElementById('searchInput').value.toLowerCase();
+            const filteredWords = words.filter(word => word.term.toLowerCase().includes(searchInput));
+            if (filteredWords.length > 0) {
+                currentIndex = 0; // Reset to first matching word
+                words = filteredWords; // Update words to filtered words
+                showWord();
+            } else {
+                alert("沒有找到匹配的單詞");
+            }
+        }
+
+        function resetSearch() {
+            words = JSON.parse(localStorage.getItem('words')) || []; // 重置為原始單詞列表
+            currentIndex = 0; // 重置索引
+            showWord();
+            document.getElementById('searchInput').value = ''; // 清空搜尋框
+        }
+
+        function markAsLearned() {
+            if (words.length > 0) {
+                words[currentIndex].learned = true; // 標記當前單詞為已學會
+                localStorage.setItem('words', JSON.stringify(words));
+                alert(`${words[currentIndex].term} 已標記為已學會！`);
+            }
+        }
+
+        function showProgress() {
+            const learnedCount = words.filter(word => word.learned).length;
+            alert(`已學會的單詞數量: ${learnedCount} / ${words.length}`);
+        }
+
+        function startReview() {
+            reviewMode = true;
+            currentIndex = 0; // Reset to the first word
+            showWord();
+            alert("開始複習模式，點擊單詞卡片以翻轉");
+        }
+
+        // 初始顯示第一個單詞
+        showWord();
+    </script>
+</body>
+</html>
